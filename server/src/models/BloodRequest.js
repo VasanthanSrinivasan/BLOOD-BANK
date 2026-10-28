@@ -1,0 +1,5 @@
+import mongoose from 'mongoose';
+import { BLOOD_GROUPS } from './Donor.js';
+const schema = new mongoose.Schema({ requestId: { type: String, unique: true }, hospitalName: { type: String, required: true, trim: true }, contactName: { type: String, required: true, trim: true }, phone: { type: String, required: true, trim: true }, bloodGroup: { type: String, enum: BLOOD_GROUPS, required: true }, units: { type: Number, required: true, min: 1, max: 500 }, requiredBy: { type: Date, required: true }, urgency: { type: String, enum: ['Routine', 'Urgent', 'Emergency'], default: 'Routine' }, status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Fulfilled'], default: 'Pending' }, notes: { type: String, maxlength: 500 }, processedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, processedAt: Date }, { timestamps: true });
+schema.pre('save', function(next) { if (!this.requestId) this.requestId = `REQ-${Date.now().toString().slice(-8)}`; next(); });
+export default mongoose.model('BloodRequest', schema);
