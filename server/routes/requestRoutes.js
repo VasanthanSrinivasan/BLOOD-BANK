@@ -1,0 +1,12 @@
+import { Router } from "express";
+import mongoose from "mongoose";
+import BloodRequest from "../models/BloodRequest.js";
+import { protect, allowRoles } from "../middleware/auth.js";
+const router=Router(); router.use(protect,allowRoles("admin"));
+const fields=["patientName","hospital","bloodGroup","units","priority","status","contactPhone","notes"];
+const input=body=>Object.fromEntries(fields.filter(k=>body[k]!==undefined).map(k=>[k,body[k]]));
+router.get("/",async(_req,res,next)=>{try{res.json({success:true,data:await BloodRequest.find().sort({createdAt:-1}).lean()});}catch(e){next(e);}});
+router.post("/",async(req,res,next)=>{try{res.status(201).json({success:true,data:await BloodRequest.create(input(req.body))});}catch(e){next(e);}});
+router.patch("/:id",async(req,res,next)=>{try{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({message:"Invalid request ID"});const d=await BloodRequest.findByIdAndUpdate(req.params.id,{$set:input(req.body)},{new:true,runValidators:true});if(!d)return res.status(404).json({message:"Request not found"});res.json({success:true,data:d});}catch(e){next(e);}});
+router.delete("/:id",async(req,res,next)=>{try{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({message:"Invalid request ID"});const d=await BloodRequest.findByIdAndDelete(req.params.id);if(!d)return res.status(404).json({message:"Request not found"});res.json({success:true,message:"Request deleted"});}catch(e){next(e);}});
+export default router;

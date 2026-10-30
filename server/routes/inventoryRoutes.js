@@ -1,0 +1,13 @@
+import { Router } from "express";
+import mongoose from "mongoose";
+import BloodInventory from "../models/BloodInventory.js";
+import { protect, allowRoles } from "../middleware/auth.js";
+const router = Router();
+router.use(protect, allowRoles("admin"));
+const fields = ["bloodGroup", "units", "minimumUnits", "location", "notes"];
+const input = body => Object.fromEntries(fields.filter(k => body[k] !== undefined).map(k => [k, body[k]]));
+router.get("/", async (_req, res, next) => { try { res.json({ success: true, data: await BloodInventory.find().sort({ bloodGroup: 1 }).lean() }); } catch(e) { next(e); } });
+router.post("/", async (req, res, next) => { try { res.status(201).json({ success: true, data: await BloodInventory.create(input(req.body)) }); } catch(e) { next(e); } });
+router.patch("/:id", async (req, res, next) => { try { if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({message:"Invalid inventory ID"}); const doc = await BloodInventory.findByIdAndUpdate(req.params.id, {$set:input(req.body)}, {new:true,runValidators:true}); if(!doc) return res.status(404).json({message:"Inventory record not found"}); res.json({success:true,data:doc}); } catch(e) { next(e); } });
+router.delete("/:id", async (req, res, next) => { try { if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({message:"Invalid inventory ID"}); const doc=await BloodInventory.findByIdAndDelete(req.params.id); if(!doc) return res.status(404).json({message:"Inventory record not found"}); res.json({success:true,message:"Inventory record deleted"}); } catch(e) { next(e); } });
+export default router;

@@ -1,0 +1,12 @@
+import { Router } from "express";
+import mongoose from "mongoose";
+import Hospital from "../models/Hospital.js";
+import { protect, allowRoles } from "../middleware/auth.js";
+const router = Router(); router.use(protect, allowRoles("admin"));
+const fields=["name","email","phone","city","address","status"];
+const input=body=>Object.fromEntries(fields.filter(k=>body[k]!==undefined).map(k=>[k,body[k]]));
+router.get("/",async(req,res,next)=>{try{const q=(req.query.search||"").trim();const filter=q?{$or:[{name:{$regex:q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),$options:"i"}},{city:{$regex:q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),$options:"i"}}]}:{};res.json({success:true,data:await Hospital.find(filter).sort({createdAt:-1}).lean()});}catch(e){next(e);}});
+router.post("/",async(req,res,next)=>{try{res.status(201).json({success:true,data:await Hospital.create(input(req.body))});}catch(e){next(e);}});
+router.patch("/:id",async(req,res,next)=>{try{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({message:"Invalid hospital ID"});const d=await Hospital.findByIdAndUpdate(req.params.id,{$set:input(req.body)},{new:true,runValidators:true});if(!d)return res.status(404).json({message:"Hospital not found"});res.json({success:true,data:d});}catch(e){next(e);}});
+router.delete("/:id",async(req,res,next)=>{try{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({message:"Invalid hospital ID"});const d=await Hospital.findByIdAndDelete(req.params.id);if(!d)return res.status(404).json({message:"Hospital not found"});res.json({success:true,message:"Hospital deleted"});}catch(e){next(e);}});
+export default router;
