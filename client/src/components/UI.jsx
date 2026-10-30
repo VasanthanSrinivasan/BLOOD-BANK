@@ -1,0 +1,10 @@
+import { Search, Plus, RefreshCw, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+export function PageHeading({title,subtitle,action,actionLabel='Add new'}) { return <div className="page-heading"><div><h2>{title}</h2><p>{subtitle}</p></div>{action&&<button className="btn btn-primary-custom" onClick={action}><Plus size={17}/>{actionLabel}</button>}</div>; }
+export function SearchBox({value,onChange,placeholder='Search records...'}) {return <div className="search-box"><Search size={17}/><input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/></div>;}
+export function Loading(){return <div className="loading"><RefreshCw className="spin" size={22}/> Loading records...</div>;}
+export function Alert({type='error',children,onClose}){if(!children)return null;const Icon=type==='success'?CheckCircle2:type==='warning'?AlertCircle:XCircle;return <div className={`alert-custom alert-${type}`}><Icon size={18}/><span>{children}</span>{onClose&&<button onClick={onClose}>×</button>}</div>;}
+export function EmptyState({title='No records found',subtitle='Add a record to get started.'}){return <div className="empty-state"><div className="empty-icon"><Search size={22}/></div><strong>{title}</strong><span>{subtitle}</span></div>;}
+export function Modal({title,onClose,children,wide=false}){return <div className="modal-backdrop-custom" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}><div className={`modal-card ${wide?'modal-wide':''}`}><div className="modal-header"><h3>{title}</h3><button className="icon-button" onClick={onClose}>×</button></div>{children}</div></div>;}
+export const dateText=value=>value?new Date(value).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'—';
+export const bloodClass=group=>`blood-badge blood-${String(group||'').replace('+','plus').replace('-','minus')}`;
+export function StatusBadge({status}){const cls=String(status||'').toLowerCase().replaceAll(' ','-');return <span className={`status-badge status-${cls}`}>{status||'Unknown'}</span>;}

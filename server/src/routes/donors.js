@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { body, validationResult } from 'express-validator';
+import Donor from '../models/Donor.js';
+import { requireRole } from '../middleware/auth.js';
+const router = Router();
+const validate = [body('name').trim().notEmpty(), body('age').isInt({ min: 18, max: 65 }), body('gender').isIn(['Female','Male','Other']), body('bloodGroup').isIn(['A+','A-','B+','B-','AB+','AB-','O+','O-']), body('phone').trim().notEmpty(), body('city').trim().notEmpty()];
+router.get('/', async (req, res, next) => { try { const { search = '', bloodGroup, page = 1, limit = 10, active } = req.query; const filter = {}; if (bloodGroup) filter.bloodGroup = bloodGroup; if (active !== undefined) filter.active = active === 'true'; if (search) filter.$or = ['name','donorId','phone','city','email'].map(k => ({ [k]: { $regex: search, $options: 'i' } })); const p = Math.max(1, Number(page)); const l = Math.min(100, Math.max(1, Number(limit))); const [items,total] = await Promise.all([Donor.find(filter).sort({ createdAt: -1 }).skip((p-1)*l).limit(l), Donor.countDocuments(filter)]); res.json({ items, total, page: p, pages: Math.ceil(total/l) }); } catch(e) { next(e); } });
+router.get('/:id', async (req,res,next) => { try { const item = await Donor.findById(req.params.id); if (!item) return res.status(404).json({message:'Donor not found.'}); res.json(item); } catch(e) { next(e); } });
+router.post('/', validate, async (req,res,next) => { try { const errors = validationResult(req); if(!errors.isEmpty()) return res.status(400).json({message:errors.array()[0].msg}); res.status(201).json(await Donor.create(req.body)); } catch(e) { next(e); } });
+router.put('/:id', validate, async (req,res,next) => { try { const errors = validationResult(req); if(!errors.isEmpty()) return res.status(400).json({message:errors.array()[0].msg}); const item = await Donor.findByIdAndUpdate(req.params.id, req.body, {new:true, runValidators:true}); if(!item) return res.status(404).json({message:'Donor not found.'}); res.json(item); } catch(e) { next(e); } });
+router.delete('/:id', requireRole('admin'), async (req,res,next) => { try { const item = await Donor.findByIdAndUpdate(req.params.id, {active:false}, {new:true}); if(!item) return res.status(404).json({message:'Donor not found.'}); res.json({message:'Donor archived.', item}); } catch(e) { next(e); } });
+export default router;
